@@ -138,7 +138,7 @@
   .campo-medio {
     width: 150px;
   }
-  .traços {
+  .tracos {
     background: #C9C2F1;
     border-radius: 6px;
     padding: 12px;
@@ -262,7 +262,7 @@
   <input type="text" id="magias" />
 
   <label>Traços da Raça:</label>
-  <div id="tracos" class="traços"></div>
+  <div id="tracos" class="tracos"></div>
 
   <div class="inline-flex" style="gap:12px;">
     <button onclick="baixarFicha()">Baixar Ficha (TXT)</button>
@@ -275,6 +275,7 @@
 </div>
 
 <script>
+  // Dados atributos e perícias
   const atributos = [
     { id: 'for', nome: 'Força', abrev: 'FOR' },
     { id: 'dex', nome: 'Destreza', abrev: 'DEX' },
@@ -305,7 +306,7 @@
     { nome: 'Sobrevivência', atributo: 'sab' }
   ];
 
-  // Bônus e traços raciais conforme passado
+  // Bônus e traços raciais
   const racas = {
     "anão": {
       bonus: { con: 2 },
@@ -345,43 +346,43 @@
     "draconato": {
       bonus: { for: 2 },
       tracos: [
-        "*Seu CA aumenta também com força (bônus de Força soma no CA).",
-        "*Seu CA ganha +1 nos testes contra Ácido, Raio e Fogo.*"
-      ],
+        "*Seu CA aumenta também com Força (bônus de Força soma no CA).*",
+          *"seu CA ganha bônus nos testes contra ácido, fogo e raio."]*
       pontosExtrasNivel1: 0,
       pontosExtrasPorNivel: 0
     },
     "gnomo": {
       bonus: { int: 2 },
       tracos: [
-        "*Astúcia Gnômica:* Você tem vantagem em todos os testes de resistência de Inteligência, Sabedoria e Carisma contra magia.",
-        "*Artesão:* Você tem proficiência em artesanato que permite restaurar objetos e equipamentos."
+        "*Engenhoso:* Você tem vantagem em testes de resistência contra magia.",
+        "*Ilusionista:* Você conhece a magia 'Ilusão Menor'."
       ],
       pontosExtrasNivel1: 0,
       pontosExtrasPorNivel: 0
     },
     "meio-elfo": {
-      bonus: { car: 2 },
+      bonus: { car: 2, sab: 1, int: 1 },
       tracos: [
-        "*Ancestralidade Feérica:* Você tem vantagem em testes de resistência contra encantamentos, e magia não pode lhe fazer dormir."
+        "*Versatilidade:* Você ganha proficiência em duas perícias à sua escolha.",
+        "*Ancestralidade Feérica:* Você tem vantagem contra encantamentos e não pode ser dormido por magia."
       ],
-      pontosExtrasNivel1: 2,
+      pontosExtrasNivel1: 0,
       pontosExtrasPorNivel: 0
     },
     "meio-orc": {
-      bonus: { for: 2 },
+      bonus: { for: 2, con: 1 },
       tracos: [
-        "*Ameaçador:* Você ganha proficiência na perícia Intimidação.",
-        "*Ataques Selvagens:* Ao obter um acerto crítico com um ataque de arma corpo a corpo, você pode rolar um dos dados de dano da arma mais uma vez e adicioná-lo ao dano extra do acerto crítico."
+        "*Resiliência orc:* Quando for reduzido a 0 HP, mas não morto, pode usar uma reação para ficar com 1 HP uma vez por descanso longo.",
+        "*Agressividade:* Pode usar ação bônus para se mover até a criatura adjacente."
       ],
       pontosExtrasNivel1: 0,
       pontosExtrasPorNivel: 0
     },
     "tiefling": {
-      bonus: { car: 2 },
+      bonus: { int: 1, car: 2 },
       tracos: [
-        "*Resistência Infernal:* Você tem resistência a dano de fogo.",
-        "*Enganador da mana:* Suas magias são afetadas pela sua carisma."
+        "*Resistência Infernal:* Resistência a dano de fogo.",
+        "*Magia Infernal:* Conhece as magias 'Thaumaturgia', 'Infernal Legacy'."
       ],
       pontosExtrasNivel1: 0,
       pontosExtrasPorNivel: 0
@@ -389,19 +390,372 @@
     "outro": {
       bonus: {},
       tracos: [
-        "(Parte editável)",
-        "(Parte editável)"
+        "Raça personalizada sem bônus automáticos."
       ],
       pontosExtrasNivel1: 0,
-      pontosExtrasPorNivel: 2
+      pontosExtrasPorNivel: 0
     }
   };
 
-  // Gera perícias na interface
-  const periciasDiv = document.getElementById('pericias-list');
-  pericias.forEach(p => {
-    const row = document.createElement('div');
-    row.classList.add('pericia-row');
-    row.innerHTML = `
-      <span class="pericia-nome">${p.nome}</span>
-      <span class="pericia-bonus"><input type="text" disabled id="bonus-${
+  // Pontos máximos para distribuir (exemplo padrão 28)
+  const pontosMaximos = 28;
+
+  // Função para calcular o modificador de atributo (D&D style)
+  function modAtributo(valor) {
+    return Math.floor((valor - 10) / 2);
+  }
+
+  // Mostrar ou esconder input "Outro..." para raça e classe
+  document.getElementById('raca').addEventListener('change', function() {
+    const val = this.value;
+    const outro = document.getElementById('racaOutro');
+    if(val === 'outro') outro.style.display = 'block';
+    else {
+      outro.style.display = 'none';
+      outro.value = '';
+    }
+    atualizarBonusERaça();
+  });
+
+  document.getElementById('racaOutro').addEventListener('input', atualizarBonusERaça);
+
+  document.getElementById('classe').addEventListener('change', function() {
+    const val = this.value;
+    const outro = document.getElementById('classeOutro');
+    if(val === 'outro') outro.style.display = 'block';
+    else {
+      outro.style.display = 'none';
+      outro.value = '';
+    }
+  });
+
+  // Atualiza os bônus raciais e traços exibidos
+  function atualizarBonusERaça() {
+    let racaSelecionada = document.getElementById('raca').value;
+    if(racaSelecionada === 'outro'){
+      racaSelecionada = 'outro';
+    }
+
+    // Mostra bônus raciais ao lado dos inputs
+    for(const at of atributos){
+      const spanBonus = document.getElementById(at.id + 'BonusRacial');
+      const bonus = racas[racaSelecionada]?.bonus[at.id] || 0;
+      if(bonus > 0){
+        spanBonus.textContent = '(+' + bonus + ')';
+      } else {
+        spanBonus.textContent = '';
+      }
+    }
+
+    // Exibe os traços da raça formatados
+    const divTracos = document.getElementById('tracos');
+    const tracosArray = racas[racaSelecionada]?.tracos || [];
+    // Coloca em negrito o texto que estiver entre *asteriscos*
+    const tracosFormatados = tracosArray.map(traco => {
+      return traco.replace(/\*(.*?)\*/g, '<span class="negrito">$1</span>');
+    });
+    divTracos.innerHTML = tracosFormatados.join('\n\n');
+  }
+
+  // Atualiza os modificadores e total de pontos para distribuir
+  function atualizarModificadores() {
+    let totalPontos = 0;
+    for(const at of atributos){
+      let val = parseInt(document.getElementById(at.id).value) || 8;
+      val = Math.min(20, Math.max(8, val)); // limita entre 8 e 20
+      document.getElementById(at.id).value = val;
+
+      // soma pontos usados, considerando custo padrão (simplificado: cada ponto acima de 8 custa 1 ponto)
+      totalPontos += (val - 8);
+
+      // calcula mod + bônus racial
+      const bonusRacial = racas[getRacaSelecionada()]?.bonus[at.id] || 0;
+      const total = val + bonusRacial;
+      const mod = modAtributo(total);
+      document.getElementById(at.id + 'Bonus').value = (mod >= 0 ? '+' : '') + mod;
+    }
+
+    const nivel = parseInt(document.getElementById('nivel').value) || 1;
+    // Pontos extras do humano ou da raça escolhida:
+    const racaBonusNivel1 = racas[getRacaSelecionada()]?.pontosExtrasNivel1 || 0;
+    const racaBonusPorNivel = racas[getRacaSelecionada()]?.pontosExtrasPorNivel || 0;
+    const pontosExtras = (nivel > 1 ? racaBonusNivel1 + (nivel - 1)*racaBonusPorNivel : racaBonusNivel1);
+
+    const pontosRestantes = pontosMaximos + pontosExtras - totalPontos;
+
+    const spanPontos = document.getElementById('pontosRestantes');
+    spanPontos.textContent = pontosRestantes;
+
+    // Exibe mensagem de erro se pontos acabaram
+    const msgPontos = document.getElementById('mensagemPontos');
+    if(pontosRestantes < 0){
+      msgPontos.style.display = 'block';
+    } else {
+      msgPontos.style.display = 'none';
+    }
+
+    atualizarCaVidaIniciativa();
+  }
+
+  // Retorna a raça selecionada (string)
+  function getRacaSelecionada(){
+    let val = document.getElementById('raca').value;
+    if(val === 'outro'){
+      const outro = document.getElementById('racaOutro').value.trim();
+      if(outro.length > 0) return 'outro';
+      else return 'humano'; // padrão caso não escreva nada
+    }
+    return val;
+  }
+
+  // Calcula CA, Vida e Iniciativa com base nos atributos + bônus raciais
+  function atualizarCaVidaIniciativa(){
+    const raca = getRacaSelecionada();
+    const bonusRaca = racas[raca]?.bonus || {};
+
+    // Atributos totais
+    const forTotal = parseInt(document.getElementById('for').value) + (bonusRaca.for || 0);
+    const dexTotal = parseInt(document.getElementById('dex').value) + (bonusRaca.dex || 0);
+    const conTotal = parseInt(document.getElementById('con').value) + (bonusRaca.con || 0);
+
+    // CA base 10 + mod DEX + bônus racial (se for Draconato, bônus de FOR soma ao CA)
+    let ca = 10 + modAtributo(dexTotal);
+    if(raca === 'draconato'){
+      ca += modAtributo(forTotal);
+    }
+    document.getElementById('ca').textContent = ca;
+
+    // Vida base: 10 + mod CON, anão ganha +2 por nível
+    const nivel = parseInt(document.getElementById('nivel').value) || 1;
+    let vida = 10 + modAtributo(conTotal);
+    if(raca === 'anão'){
+      vida += 2 * nivel;
+    }
+    if(vida < 1) vida = 1; // no mínimo 1
+    document.getElementById('vida').textContent = vida;
+
+    // Iniciativa = mod DEX total
+    const ini = modAtributo(dexTotal);
+    document.getElementById('iniciativa').textContent = (ini >= 0 ? '+' : '') + ini;
+  }
+
+  // Cria inputs de perícias dinâmicos
+  function criarPericias() {
+    const div = document.getElementById('pericias-list');
+    div.innerHTML = '';
+    for(let p of pericias){
+      const row = document.createElement('div');
+      row.className = 'pericia-row';
+
+      const nome = document.createElement('div');
+      nome.className = 'pericia-nome';
+      nome.textContent = p.nome;
+
+      const atributo = document.createElement('div');
+      atributo.className = 'pericia-atributo';
+      atributo.textContent = atributos.find(a => a.id === p.atributo).abrev;
+
+      const inputBonus = document.createElement('input');
+      inputBonus.type = 'number';
+      inputBonus.value = 0;
+      inputBonus.className = 'pericia-bonus';
+      inputBonus.min = -10;
+      inputBonus.max = 20;
+      inputBonus.id = 'pericia-' + p.nome.toLowerCase().replace(/\s+/g,'-');
+
+      const divBonus = document.createElement('div');
+      divBonus.className = 'pericia-bonus';
+      divBonus.appendChild(inputBonus);
+
+      row.appendChild(nome);
+      row.appendChild(atributo);
+      row.appendChild(divBonus);
+      div.appendChild(row);
+    }
+  }
+
+  // Baixar ficha em TXT
+  function baixarFicha(){
+    const nome = document.getElementById('nome').value || 'Ficha RPG';
+    let conteudo = '=== Ficha de RPG ===\n\n';
+
+    conteudo += 'Nome: ' + nome + '\n';
+    conteudo += 'Nível: ' + (document.getElementById('nivel').value || 1) + '\n';
+
+    const racaSel = document.getElementById('raca').value === 'outro' ? document.getElementById('racaOutro').value.trim() || 'Outro' : document.getElementById('raca').options[document.getElementById('raca').selectedIndex].text;
+    const classeSel = document.getElementById('classe').value === 'outro' ? document.getElementById('classeOutro').value.trim() || 'Outro' : document.getElementById('classe').options[document.getElementById('classe').selectedIndex].text;
+
+    conteudo += 'Raça: ' + racaSel + '\n';
+    conteudo += 'Classe: ' + classeSel + '\n\n';
+
+    conteudo += 'Atributos (com bônus raciais):\n';
+    for(const at of atributos){
+      const val = parseInt(document.getElementById(at.id).value) || 8;
+      const bonus = racas[getRacaSelecionada()]?.bonus[at.id] || 0;
+      const total = val + bonus;
+      const mod = modAtributo(total);
+      conteudo += `${at.nome}: ${val} + ${bonus} = ${total} (Mod: ${mod >= 0 ? '+' : ''}${mod})\n`;
+    }
+    conteudo += '\n';
+
+    conteudo += `CA: ${document.getElementById('ca').textContent}\n`;
+    conteudo += `Vida: ${document.getElementById('vida').textContent}\n`;
+    conteudo += `Iniciativa: ${document.getElementById('iniciativa').textContent}\n\n`;
+
+    conteudo += 'Perícias (bônus):\n';
+    for(let p of pericias){
+      const bonus = document.getElementById('pericia-' + p.nome.toLowerCase().replace(/\s+/g,'-')).value || 0;
+      conteudo += `${p.nome}: ${bonus >= 0 ? '+' : ''}${bonus}\n`;
+    }
+
+    conteudo += '\nLore / Características:\n';
+    conteudo += document.getElementById('lore').value + '\n\n';
+
+    conteudo += 'Magias:\n';
+    conteudo += document.getElementById('magias').value + '\n\n';
+
+    conteudo += 'Traços da Raça:\n';
+    conteudo += document.getElementById('tracos').innerText + '\n';
+
+    const blob = new Blob([conteudo], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nome.replace(/\s+/g, '_') + '_Ficha.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Salvar ficha no localStorage
+  function salvarFicha(){
+    if(document.getElementById('mensagemPontos').style.display === 'block'){
+      alert('Não pode salvar, pois os pontos de atributos excedem o máximo!');
+      return;
+    }
+    const dados = {
+      nome: document.getElementById('nome').value,
+      nivel: document.getElementById('nivel').value,
+      raca: document.getElementById('raca').value,
+      racaOutro: document.getElementById('racaOutro').value,
+      classe: document.getElementById('classe').value,
+      classeOutro: document.getElementById('classeOutro').value,
+      atributos: {},
+      pericias: {},
+      lore: document.getElementById('lore').value,
+      magias: document.getElementById('magias').value
+    };
+    for(const at of atributos){
+      dados.atributos[at.id] = document.getElementById(at.id).value;
+    }
+    for(let p of pericias){
+      dados.pericias[p.nome] = document.getElementById('pericia-' + p.nome.toLowerCase().replace(/\s+/g,'-')).value;
+    }
+    localStorage.setItem('fichaRPG', JSON.stringify(dados));
+    const msg = document.getElementById('msgSalvo');
+    msg.style.display = 'block';
+    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+  }
+
+  // Carregar ficha do localStorage
+  function carregarFicha(){
+    const dadosStr = localStorage.getItem('fichaRPG');
+    if(!dadosStr){
+      alert('Nenhuma ficha salva encontrada!');
+      return;
+    }
+    const dados = JSON.parse(dadosStr);
+    document.getElementById('nome').value = dados.nome || '';
+    document.getElementById('nivel').value = dados.nivel || 1;
+    document.getElementById('raca').value = dados.raca || 'humano';
+    document.getElementById('racaOutro').value = dados.racaOutro || '';
+    document.getElementById('classe').value = dados.classe || 'guerreiro';
+    document.getElementById('classeOutro').value = dados.classeOutro || '';
+
+    if(dados.raca === 'outro'){
+      document.getElementById('racaOutro').style.display = 'block';
+    } else {
+      document.getElementById('racaOutro').style.display = 'none';
+    }
+    if(dados.classe === 'outro'){
+      document.getElementById('classeOutro').style.display = 'block';
+    } else {
+      document.getElementById('classeOutro').style.display = 'none';
+    }
+
+    for(const at of atributos){
+      document.getElementById(at.id).value = dados.atributos[at.id] || 8;
+    }
+    for(let p of pericias){
+      const val = dados.pericias[p.nome] || 0;
+      document.getElementById('pericia-' + p.nome.toLowerCase().replace(/\s+/g,'-')).value = val;
+    }
+    document.getElementById('lore').value = dados.lore || '';
+    document.getElementById('magias').value = dados.magias || '';
+
+    atualizarBonusERaça();
+    atualizarModificadores();
+  }
+
+  // Limpar ficha (reseta tudo)
+  function limparFicha(){
+    if(!confirm('Tem certeza que deseja limpar a ficha?')){
+      return;
+    }
+    document.getElementById('nome').value = '';
+    document.getElementById('nivel').value = 1;
+    document.getElementById('raca').value = 'humano';
+    document.getElementById('racaOutro').value = '';
+    document.getElementById('racaOutro').style.display = 'none';
+    document.getElementById('classe').value = 'guerreiro';
+    document.getElementById('classeOutro').value = '';
+    document.getElementById('classeOutro').style.display = 'none';
+
+    for(const at of atributos){
+      document.getElementById(at.id).value = 8;
+      document.getElementById(at.id + 'Bonus').value = '';
+      document.getElementById(at.id + 'BonusRacial').textContent = '';
+    }
+    for(let p of pericias){
+      document.getElementById('pericia-' + p.nome.toLowerCase().replace(/\s+/g,'-')).value = 0;
+    }
+    document.getElementById('lore').value = '';
+    document.getElementById('magias').value = '';
+    document.getElementById('tracos').innerHTML = '';
+
+    document.getElementById('pontosRestantes').textContent = pontosMaximos;
+    document.getElementById('mensagemPontos').style.display = 'none';
+    document.getElementById('ca').textContent = '0';
+    document.getElementById('vida').textContent = '0';
+    document.getElementById('iniciativa').textContent = '0';
+
+  }
+
+  // Eventos para atualizar ao mudar valores
+  for(const at of atributos){
+    document.getElementById(at.id).addEventListener('input', atualizarModificadores);
+  }
+  document.getElementById('nivel').addEventListener('input', function() {
+    let val = parseInt(this.value);
+    if(isNaN(val) || val < 1) this.value = 1;
+    else if(val > 20) this.value = 20;
+    atualizarModificadores();
+  });
+
+  // Atualiza bônus raciais e recalcula ao mudar raça ou escrever "outro"
+  document.getElementById('raca').addEventListener('change', function(){
+    atualizarBonusERaça();
+    atualizarModificadores();
+  });
+  document.getElementById('racaOutro').addEventListener('input', function(){
+    atualizarBonusERaça();
+    atualizarModificadores();
+  });
+
+  // Inicializações ao carregar a página
+  criarPericias();
+  atualizarBonusERaça();
+  atualizarModificadores();
+</script>
+
+</body>
+</html>
