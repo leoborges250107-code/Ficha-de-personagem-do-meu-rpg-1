@@ -2,42 +2,67 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<title>Ficha de RPG Completa</title>
+<title>Ficha de RPG com Login</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    background: #f4f4f4;
+    background: #E6E0F8; /* roxo claro */
     padding: 20px;
-    color: #333;
+    color: #3C2F5E; /* roxo escuro para texto */
   }
-  h1 {
+  h1, h2 {
     text-align: center;
+    color: #4B3F72;
   }
   .container {
     max-width: 800px;
     margin: auto;
-    background: white;
+    background: #F3EFFF; /* lilás bem clarinho */
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 0 10px #aaa;
+    box-shadow: 0 0 12px rgba(75, 63, 114, 0.4);
   }
   label {
     font-weight: bold;
     margin-top: 10px;
     display: block;
+    color: #4B3F72;
   }
-  input[type="text"], input[type="number"], textarea {
+  input[type="text"], input[type="password"], input[type="number"], textarea {
     padding: 6px;
     margin-top: 4px;
     width: 100%;
     box-sizing: border-box;
     font-size: 1em;
     border-radius: 5px;
-    border: 1px solid #bbb;
+    border: 1px solid #B9A9D6;
+    background: #F9F6FF;
+    color: #3C2F5E;
   }
   textarea {
     min-height: 80px;
     resize: vertical;
+  }
+  button {
+    margin: 10px 0 5px 0;
+    padding: 12px;
+    width: 100%;
+    font-size: 16px;
+    border: none;
+    background: #6A5ACD;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  button:hover {
+    background: #4B3F72;
+  }
+  .erro {
+    color: #B22222;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: none;
   }
   .atributo {
     display: flex;
@@ -59,44 +84,57 @@
     flex: 0 0 50px;
   }
   .bonus.positivo {
-    color: green;
+    color: #6A5ACD;
   }
   .bonus.negativo {
-    color: red;
+    color: #9E7CC2;
   }
   .pontos-restantes {
     font-size: 18px;
     margin: 10px 0 6px 0;
-    color: #005a0f;
+    color: #4B3F72;
     font-weight: bold;
   }
-  .erro {
-    color: red;
-    font-weight: bold;
-    margin-bottom: 10px;
+  #erroLogin, #erroCadastro {
+    margin-top: 10px;
+  }
+  #logoutBtn {
+    background: #B22222;
+  }
+  #logoutBtn:hover {
+    background: #7A1717;
+  }
+  /* Hide sections by default */
+  #loginSection, #fichaSection {
     display: none;
-  }
-  button {
-    margin: 10px 0 5px 0;
-    padding: 12px;
-    width: 100%;
-    font-size: 16px;
-    border: none;
-    background: #007bff;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-  button:hover {
-    background: #0056b3;
   }
 </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="loginSection">
+  <h1>Login - Ficha RPG</h1>
+  <label for="loginUser">Nome de usuário:</label>
+  <input type="text" id="loginUser" autocomplete="username" />
+  <label for="loginPass">Senha:</label>
+  <input type="password" id="loginPass" autocomplete="current-password" />
+  <button id="btnLogin">Entrar</button>
+  <div class="erro" id="erroLogin"></div>
+
+  <hr style="margin:20px 0; border-color:#B9A9D6" />
+
+  <h2>Cadastro</h2>
+  <label for="cadUser">Nome de usuário:</label>
+  <input type="text" id="cadUser" autocomplete="username" />
+  <label for="cadPass">Senha:</label>
+  <input type="password" id="cadPass" autocomplete="new-password" />
+  <button id="btnCadastro">Cadastrar</button>
+  <div class="erro" id="erroCadastro"></div>
+</div>
+
+<div class="container" id="fichaSection">
   <h1>Ficha de RPG Completa</h1>
+  <button id="logoutBtn">Logout</button>
 
   <label for="nivel">Nível:</label>
   <input type="number" id="nivel" min="1" value="1" />
@@ -134,14 +172,37 @@
   <textarea id="magias" placeholder="Liste as magias do personagem, um por linha..."></textarea>
 
   <button id="btnSalvar">Salvar Ficha</button>
-  <button id="btnCarregar">Carregar Ficha</button>
-  <button id="btnResetar">Resetar Ficha</button>
   <button id="btnExportar">Exportar Ficha (TXT)</button>
 </div>
 
 <script>
+  // --- Login System ---
+  function getUsuarios() {
+    const dados = localStorage.getItem('usuariosRPG');
+    return dados ? JSON.parse(dados) : {};
+  }
+
+  function setUsuarios(users) {
+    localStorage.setItem('usuariosRPG', JSON.stringify(users));
+  }
+
+  function loginUsuario(user, pass) {
+    const users = getUsuarios();
+    return users[user] && users[user] === pass;
+  }
+
+  function cadastrarUsuario(user, pass) {
+    const users = getUsuarios();
+    if(users[user]) return false; // já existe
+    users[user] = pass;
+    setUsuarios(users);
+    return true;
+  }
+
+  // --- Variables ficha ---
   const nomesAtributos = ["Força", "Destreza", "Constituição", "Inteligência", "Sabedoria", "Carisma"];
   let atributos = {};
+  let usuarioLogado = null;
 
   function calculaBonus(valor) {
     return Math.floor((valor - 10) / 2);
@@ -211,6 +272,7 @@
   }
 
   function salvarFicha() {
+    if (!usuarioLogado) return;
     const dados = {
       nivel: document.getElementById("nivel").value,
       nome: document.getElementById("nome").value,
@@ -222,14 +284,16 @@
       inventario: document.getElementById("inventario").value,
       magias: document.getElementById("magias").value
     };
-    localStorage.setItem("fichaRPG", JSON.stringify(dados));
-    alert("Ficha salva com sucesso!");
+    localStorage.setItem(`fichaRPG_${usuarioLogado}`, JSON.stringify(dados));
   }
 
   function carregarFicha() {
-    const dadosStr = localStorage.getItem("fichaRPG");
+    if (!usuarioLogado) return;
+    const dadosStr = localStorage.getItem(`fichaRPG_${usuarioLogado}`);
     if (!dadosStr) {
-      alert("Nenhuma ficha salva encontrada.");
+      // ficha limpa
+      criarCamposAtributos();
+      atualizarPontos();
       return;
     }
     const dados = JSON.parse(dadosStr);
@@ -261,12 +325,14 @@
     }
 
     atualizarPontos();
-    alert("Ficha carregada com sucesso!");
   }
 
-  function resetFicha() {
+  function resetarFicha() {
+    if (!usuarioLogado) return;
     if (!confirm("Tem certeza que deseja resetar a ficha? Todos os dados serão apagados.")) return;
-    localStorage.removeItem("fichaRPG");
+    localStorage.removeItem(`fichaRPG_${usuarioLogado}`);
+    criarCamposAtributos();
+    atualizarPontos();
     document.getElementById("nivel").value = 1;
     document.getElementById("nome").value = "";
     document.getElementById("classe").value = "";
@@ -275,11 +341,11 @@
     document.getElementById("lore").value = "";
     document.getElementById("inventario").value = "";
     document.getElementById("magias").value = "";
-    criarCamposAtributos();
-    atualizarPontos();
+    salvarFicha();
   }
 
   function exportarTXT() {
+    if (!usuarioLogado) return;
     let texto = `Nome: ${document.getElementById("nome").value}
 Classe: ${document.getElementById("classe").value}
 Raça: ${document.getElementById("raca").value}
@@ -312,25 +378,89 @@ ${document.getElementById("magias").value}
     a.click();
   }
 
-  document.getElementById("nivel").addEventListener("input", () => {
-    atualizarPontos();
-    salvarFicha();
+  // --- Controle telas ---
+  function mostrarLogin() {
+    document.getElementById("loginSection").style.display = "block";
+    document.getElementById("fichaSection").style.display = "none";
+  }
+  function mostrarFicha() {
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("fichaSection").style.display = "block";
+  }
+
+  // --- Eventos Login e Cadastro ---
+  document.getElementById("btnLogin").addEventListener("click", () => {
+    const user = document.getElementById("loginUser").value.trim();
+    const pass = document.getElementById("loginPass").value;
+    const erro = document.getElementById("erroLogin");
+
+    if (!user || !pass) {
+      erro.textContent = "Preencha usuário e senha!";
+      erro.style.display = "block";
+      return;
+    }
+    if (loginUsuario(user, pass)) {
+      erro.style.display = "none";
+      usuarioLogado = user;
+      iniciarSessaoUsuario();
+    } else {
+      erro.textContent = "Usuário ou senha incorretos!";
+      erro.style.display = "block";
+    }
   });
-  document.getElementById("nome").addEventListener("input", salvarFicha);
-  document.getElementById("classe").addEventListener("input", salvarFicha);
-  document.getElementById("raca").addEventListener("input", salvarFicha);
-  document.getElementById("antecedente").addEventListener("input", salvarFicha);
-  document.getElementById("lore").addEventListener("input", salvarFicha);
-  document.getElementById("inventario").addEventListener("input", salvarFicha);
-  document.getElementById("magias").addEventListener("input", salvarFicha);
 
-  document.getElementById("btnSalvar").addEventListener("click", salvarFicha);
-  document.getElementById("btnCarregar").addEventListener("click", carregarFicha);
-  document.getElementById("btnResetar").addEventListener("click", resetFicha);
-  document.getElementById("btnExportar").addEventListener("click", exportarTXT);
+  document.getElementById("btnCadastro").addEventListener("click", () => {
+    const user = document.getElementById("cadUser").value.trim();
+    const pass = document.getElementById("cadPass").value;
+    const erro = document.getElementById("erroCadastro");
 
-  criarCamposAtributos();
-  atualizarPontos();
+    if (!user || !pass) {
+      erro.textContent = "Preencha usuário e senha para cadastro!";
+      erro.style.display = "block";
+      return;
+    }
+    if (cadastrarUsuario(user, pass)) {
+      erro.style.display = "none";
+      alert("Usuário cadastrado com sucesso! Agora faça login.");
+      document.getElementById("cadUser").value = "";
+      document.getElementById("cadPass").value = "";
+    } else {
+      erro.textContent = "Usuário já existe. Escolha outro nome.";
+      erro.style.display = "block";
+    }
+  });
+
+  // --- Sessão do usuário ---
+  function iniciarSessaoUsuario() {
+    mostrarFicha();
+    criarCamposAtributos();
+    carregarFicha();
+
+    // Escuta alterações para salvar
+    document.getElementById("nivel").addEventListener("input", () => { atualizarPontos(); salvarFicha(); });
+    document.getElementById("nome").addEventListener("input", salvarFicha);
+    document.getElementById("classe").addEventListener("input", salvarFicha);
+    document.getElementById("raca").addEventListener("input", salvarFicha);
+    document.getElementById("antecedente").addEventListener("input", salvarFicha);
+    document.getElementById("lore").addEventListener("input", salvarFicha);
+    document.getElementById("inventario").addEventListener("input", salvarFicha);
+    document.getElementById("magias").addEventListener("input", salvarFicha);
+
+    document.getElementById("btnSalvar").addEventListener("click", () => {
+      salvarFicha();
+      alert("Ficha salva com sucesso!");
+    });
+    document.getElementById("btnExportar").addEventListener("click", exportarTXT);
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+  }
+
+  function logout() {
+    usuarioLogado = null;
+    mostrarLogin();
+  }
+
+  // --- Inicialização ---
+  mostrarLogin();
 </script>
 
 </body>
