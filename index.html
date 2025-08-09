@@ -1,219 +1,337 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Ficha de RPG</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 40px; }
-    .container { background: #fff; margin: auto; max-width: 700px; padding: 24px 32px 32px 32px; border-radius: 16px; box-shadow: 0 0 10px #bbb; }
-    h1 { text-align: center; }
-    .campo { margin-bottom: 12px; }
-    label { display: block; font-weight: bold; margin-bottom: 4px; }
-    input[type="text"], textarea { width: 100%; padding: 6px; font-size: 1em; margin-bottom: 6px; border-radius: 5px; border: 1px solid #bbb; }
-    .atributos { display: flex; flex-wrap: wrap; margin-bottom: 18px; gap: 12px; }
-    .atributo-block { flex: 1 0 32%; background: #f0f0f0; border-radius: 8px; padding: 10px; margin-bottom: 6px; min-width: 160px;}
-    .atributo-block label { font-size: 1em; margin-bottom: 6px; }
-    .quadrado-grande { width: 48px; height: 48px; font-size: 1.3em; text-align: center; border: 2px solid #444; border-radius: 6px; margin-bottom: 5px; }
-    .quadrado-pequeno { width: 32px; height: 24px; font-size: 1em; text-align: center; border: 2px solid #888; border-radius: 6px; }
-    .info { background: #e8e8e8; padding: 8px 12px; border-radius: 6px; margin-bottom: 18px; font-size: 1.1em; }
-    .pericias { margin-bottom: 18px; }
-    .pericia-row { display: flex; align-items: center; margin-bottom: 4px; }
-    .pericia-nome, .pericia-bonus, .pericia-atributo { width: 120px; display: inline-block; }
-    .pericia-bonus input { width: 32px; text-align: center; border: 1px solid #bbb; border-radius: 4px; }
-    textarea { min-height: 60px; }
-    .pontos-restantes { color: #005a0f; font-weight: bold; }
-    .botao-baixar { margin-top: 10px; }
-  </style>
+<meta charset="UTF-8" />
+<title>Ficha de RPG Completa</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    padding: 20px;
+    color: #333;
+  }
+  h1 {
+    text-align: center;
+  }
+  .container {
+    max-width: 800px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #aaa;
+  }
+  label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+  }
+  input[type="text"], input[type="number"], textarea {
+    padding: 6px;
+    margin-top: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1em;
+    border-radius: 5px;
+    border: 1px solid #bbb;
+  }
+  textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+  .atributo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+  }
+  .atributo label {
+    flex: 1 0 120px;
+  }
+  .atributo input[type=number] {
+    width: 60px;
+    text-align: center;
+  }
+  .bonus {
+    width: 50px;
+    font-weight: bold;
+    text-align: center;
+    flex: 0 0 50px;
+  }
+  .bonus.positivo {
+    color: green;
+  }
+  .bonus.negativo {
+    color: red;
+  }
+  .pontos-restantes {
+    font-size: 18px;
+    margin: 10px 0 6px 0;
+    color: #005a0f;
+    font-weight: bold;
+  }
+  .erro {
+    color: red;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: none;
+  }
+  button {
+    margin: 10px 0 5px 0;
+    padding: 12px;
+    width: 100%;
+    font-size: 16px;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  button:hover {
+    background: #0056b3;
+  }
+</style>
 </head>
 <body>
+
 <div class="container">
-  <h1>Ficha de RPG</h1>
-  
-  <div class="campo">
-    <label for="nome">Nome:</label>
-    <input type="text" id="nome">
+  <h1>Ficha de RPG Completa</h1>
+
+  <label for="nivel">Nível:</label>
+  <input type="number" id="nivel" min="1" value="1" />
+
+  <label for="nome">Nome:</label>
+  <input type="text" id="nome" />
+
+  <label for="classe">Classe:</label>
+  <input type="text" id="classe" />
+
+  <label for="raca">Raça:</label>
+  <input type="text" id="raca" />
+
+  <label for="antecedente">Antecedente:</label>
+  <input type="text" id="antecedente" />
+
+  <h3>Atributos</h3>
+  <div id="atributos"></div>
+
+  <div class="pontos-restantes">
+    Pontos restantes: <span id="pontosRestantes">28</span>
   </div>
-  <div class="campo">
-    <label for="raca">Raça:</label>
-    <input type="text" id="raca">
-  </div>
-  
-  <div class="info">
-    Pontos para distribuir: <span id="pontosRestantes" class="pontos-restantes">28</span>
-  </div>
-  
-  <div class="atributos">
-    <!-- Atributos -->
-    <div class="atributo-block">
-      <label>Força (FOR)</label>
-      <input type="number" min="8" max="18" step="1" value="8" class="quadrado-grande" id="for">
-      <input type="text" disabled class="quadrado-pequeno" id="forBonus">
-    </div>
-    <div class="atributo-block">
-      <label>Destreza (DEX)</label>
-      <input type="number" min="8" max="18" step="1" value="8" class="quadrado-grande" id="dex">
-      <input type="text" disabled class="quadrado-pequeno" id="dexBonus">
-    </div>
-    <div class="atributo-block">
-      <label>Constituição (CON)</label>
-      <input type="number" min="8" max="18" step="1" value="8" class="quadrado-grande" id="con">
-      <input type="text" disabled class="quadrado-pequeno" id="conBonus">
-    </div>
-    <div class="atributo-block">
-      <label>Inteligência (INT)</label>
-      <input type="number" min="8" max="18" step="1" value="8" class="quadrado-grande" id="int">
-      <input type="text" disabled class="quadrado-pequeno" id="intBonus">
-    </div>
-    <div class="atributo-block">
-      <label>Sabedoria (SAB)</label>
-      <input type="number" min="8" max="18" step="1" value="8" class="quadrado-grande" id="sab">
-      <input type="text" disabled class="quadrado-pequeno" id="sabBonus">
-    </div>
-    <div class="atributo-block">
-      <label>Carisma (CAR)</label>
-      <input type="number" min="8" max="18" step="1" value="8" class="quadrado-grande" id="car">
-      <input type="text" disabled class="quadrado-pequeno" id="carBonus">
-    </div>
-  </div>
-  
-  <div class="info">
-    <b>Classe de Armadura (CA):</b> <span id="ca">0</span>
-    &nbsp; | &nbsp; <b>Vida:</b> <span id="vida">0</span>
-  </div>
-  
-  <div class="pericias">
-    <h3>Perícias</h3>
-    <div id="pericias-list"></div>
-  </div>
-  
-  <div class="campo">
-    <label for="lore">Lore/Características Gerais:</label>
-    <textarea id="lore"></textarea>
-  </div>
-  
-  <button class="botao-baixar" onclick="baixarFicha()">Baixar Ficha (TXT)</button>
+  <div class="erro" id="erroPontos">⚠ Você não possui mais pontos disponíveis!</div>
+
+  <label for="iniciativa">Iniciativa:</label>
+  <input type="text" id="iniciativa" readonly />
+
+  <label for="lore">Lore / Características Gerais:</label>
+  <textarea id="lore" placeholder="Conte a história do seu personagem..."></textarea>
+
+  <label for="inventario">Inventário:</label>
+  <textarea id="inventario" placeholder="Liste os itens do personagem, um por linha..."></textarea>
+
+  <label for="magias">Magias:</label>
+  <textarea id="magias" placeholder="Liste as magias do personagem, um por linha..."></textarea>
+
+  <button id="btnSalvar">Salvar Ficha</button>
+  <button id="btnCarregar">Carregar Ficha</button>
+  <button id="btnResetar">Resetar Ficha</button>
+  <button id="btnExportar">Exportar Ficha (TXT)</button>
 </div>
 
 <script>
-  // Configuração dos atributos e perícias
-  const atributos = [
-    { id: 'for', nome: 'Força', abrev: 'FOR' },
-    { id: 'dex', nome: 'Destreza', abrev: 'DEX' },
-    { id: 'con', nome: 'Constituição', abrev: 'CON' },
-    { id: 'int', nome: 'Inteligência', abrev: 'INT' },
-    { id: 'sab', nome: 'Sabedoria', abrev: 'SAB' },
-    { id: 'car', nome: 'Carisma', abrev: 'CAR' }
-  ];
+  const nomesAtributos = ["Força", "Destreza", "Constituição", "Inteligência", "Sabedoria", "Carisma"];
+  let atributos = {};
 
-  const pericias = [
-    { nome: 'Acrobacia', atributo: 'dex' },
-    { nome: 'Arcanismo', atributo: 'int' },
-    { nome: 'Atletismo', atributo: 'for' },
-    { nome: 'Atuação', atributo: 'car' },
-    { nome: 'Blefe', atributo: 'car' },
-    { nome: 'Furtividade', atributo: 'dex' },
-    { nome: 'História', atributo: 'int' },
-    { nome: 'Intimidação', atributo: 'car' },
-    { nome: 'Intuição', atributo: 'sab' },
-    { nome: 'Investigação', atributo: 'int' },
-    { nome: 'Lidar com os Animais', atributo: 'sab' },
-    { nome: 'Medicina', atributo: 'sab' },
-    { nome: 'Natureza', atributo: 'int' },
-    { nome: 'Percepção', atributo: 'sab' },
-    { nome: 'Persuasão', atributo: 'car' },
-    { nome: 'Prestidigitação', atributo: 'dex' },
-    { nome: 'Religião', atributo: 'int' },
-    { nome: 'Sobrevivência', atributo: 'sab' }
-  ];
-
-  // Gera as linhas das perícias
-  const periciasDiv = document.getElementById('pericias-list');
-  pericias.forEach(p => {
-    const row = document.createElement('div');
-    row.classList.add('pericia-row');
-    row.innerHTML = `
-      <span class="pericia-nome">${p.nome}</span>
-      <span class="pericia-bonus"><input type="text" disabled id="bonus-${p.nome.replace(/ /g,'')}" value="0"></span>
-      <span class="pericia-atributo">${atributos.find(a=>a.id===p.atributo).nome}</span>
-    `;
-    periciasDiv.appendChild(row);
-  });
-
-  // Função para calcular bônus a cada 2 pontos acima de 8
   function calculaBonus(valor) {
-    return Math.floor((valor - 8) / 2) || -1;
+    return Math.floor((valor - 10) / 2);
   }
 
-  // Atualiza tudo quando algum valor de atributo é mudado
-  function atualizaFicha() {
-    let pontosUsados = 0;
-    let valores = {};
-    atributos.forEach(attr => {
-      const val = parseInt(document.getElementById(attr.id).value, 10) || 8;
-      valores[attr.id] = val;
-      pontosUsados += (val - 8);
-      // Atualiza bônus visualmente
-      document.getElementById(attr.id+'Bonus').value = calculaBonus(val);
-    });
-    // Limita os pontos
-    let pontosRestantes = 28 - pontosUsados;
-    document.getElementById('pontosRestantes').textContent = pontosRestantes;
-    // Previne passar do limite
-    if (pontosRestantes < 0) {
-      atributos.forEach(attr => {
-        let el = document.getElementById(attr.id);
-        if (parseInt(el.value) > 8) {
-          el.value = parseInt(el.value)-1;
-        }
+  function criarCamposAtributos() {
+    const container = document.getElementById("atributos");
+    container.innerHTML = "";
+    for (let nome of nomesAtributos) {
+      atributos[nome] = 8;
+      let linha = document.createElement("div");
+      linha.className = "atributo";
+      linha.innerHTML = `
+        <label for="attr_${nome}">${nome}:</label>
+        <input type="number" id="attr_${nome}" value="8" min="8" max="20" />
+        <span class="bonus negativo" id="bonus_${nome}">-1</span>
+      `;
+      container.appendChild(linha);
+
+      document.getElementById(`attr_${nome}`).addEventListener("input", (e) => {
+        let valor = parseInt(e.target.value);
+        if (isNaN(valor) || valor < 8) valor = 8;
+        if (valor > 20) valor = 20;
+
+        atributos[nome] = valor;
+
+        let bonus = calculaBonus(valor);
+        let bonusSpan = document.getElementById(`bonus_${nome}`);
+        bonusSpan.textContent = bonus >= 0 ? `+${bonus}` : bonus;
+        bonusSpan.className = "bonus " + (bonus >= 0 ? "positivo" : "negativo");
+
+        atualizarPontos();
+        salvarFicha();
       });
-      atualizaFicha();
+    }
+  }
+
+  function pontosTotais() {
+    let nivel = parseInt(document.getElementById("nivel").value);
+    if (isNaN(nivel) || nivel < 1) nivel = 1;
+    return 28 + (nivel - 1) * 4;
+  }
+
+  function atualizarPontos() {
+    let gasto = 0;
+    for (let nome of nomesAtributos) {
+      gasto += (atributos[nome] - 8);
+    }
+    let total = pontosTotais();
+    let restante = total - gasto;
+
+    document.getElementById("pontosRestantes").innerText = restante;
+
+    let erroMsg = document.getElementById("erroPontos");
+    if (restante < 0) {
+      erroMsg.style.display = "block";
+    } else {
+      erroMsg.style.display = "none";
+    }
+
+    atualizarIniciativa();
+  }
+
+  function atualizarIniciativa() {
+    let bonusDex = calculaBonus(atributos["Destreza"]);
+    document.getElementById("iniciativa").value = bonusDex >= 0 ? `+${bonusDex}` : bonusDex;
+  }
+
+  function salvarFicha() {
+    const dados = {
+      nivel: document.getElementById("nivel").value,
+      nome: document.getElementById("nome").value,
+      classe: document.getElementById("classe").value,
+      raca: document.getElementById("raca").value,
+      antecedente: document.getElementById("antecedente").value,
+      atributos,
+      lore: document.getElementById("lore").value,
+      inventario: document.getElementById("inventario").value,
+      magias: document.getElementById("magias").value
+    };
+    localStorage.setItem("fichaRPG", JSON.stringify(dados));
+    alert("Ficha salva com sucesso!");
+  }
+
+  function carregarFicha() {
+    const dadosStr = localStorage.getItem("fichaRPG");
+    if (!dadosStr) {
+      alert("Nenhuma ficha salva encontrada.");
       return;
     }
-    // Atualiza CA (bônus de con + sab + dex)
-    const ca = calculaBonus(valores.con) + calculaBonus(valores.sab) + calculaBonus(valores.dex);
-    document.getElementById('ca').textContent = ca;
-    // Vida = dobro do valor bruto de constituição
-    document.getElementById('vida').textContent = valores.con * 2;
-    // Atualiza bônus das perícias
-    pericias.forEach(p => {
-      const bonus = calculaBonus(valores[p.atributo]);
-      document.getElementById('bonus-'+p.nome.replace(/ /g,'')).value = bonus;
-    });
+    const dados = JSON.parse(dadosStr);
+
+    document.getElementById("nivel").value = dados.nivel || "1";
+    document.getElementById("nome").value = dados.nome || "";
+    document.getElementById("classe").value = dados.classe || "";
+    document.getElementById("raca").value = dados.raca || "";
+    document.getElementById("antecedente").value = dados.antecedente || "";
+    document.getElementById("lore").value = dados.lore || "";
+    document.getElementById("inventario").value = dados.inventario || "";
+    document.getElementById("magias").value = dados.magias || "";
+
+    if (dados.atributos) {
+      for (let nome of nomesAtributos) {
+        let val = dados.atributos[nome];
+        if (val === undefined) val = 8;
+        atributos[nome] = val;
+        const input = document.getElementById(`attr_${nome}`);
+        if (input) input.value = val;
+
+        let bonus = calculaBonus(val);
+        const bonusSpan = document.getElementById(`bonus_${nome}`);
+        if (bonusSpan) {
+          bonusSpan.textContent = bonus >= 0 ? `+${bonus}` : bonus;
+          bonusSpan.className = "bonus " + (bonus >= 0 ? "positivo" : "negativo");
+        }
+      }
+    }
+
+    atualizarPontos();
+    alert("Ficha carregada com sucesso!");
   }
 
-  // Adiciona evento em cada atributo
-  atributos.forEach(attr => {
-    document.getElementById(attr.id).addEventListener('input', atualizaFicha);
+  function resetFicha() {
+    if (!confirm("Tem certeza que deseja resetar a ficha? Todos os dados serão apagados.")) return;
+    localStorage.removeItem("fichaRPG");
+    document.getElementById("nivel").value = 1;
+    document.getElementById("nome").value = "";
+    document.getElementById("classe").value = "";
+    document.getElementById("raca").value = "";
+    document.getElementById("antecedente").value = "";
+    document.getElementById("lore").value = "";
+    document.getElementById("inventario").value = "";
+    document.getElementById("magias").value = "";
+    criarCamposAtributos();
+    atualizarPontos();
+  }
+
+  function exportarTXT() {
+    let texto = `Nome: ${document.getElementById("nome").value}
+Classe: ${document.getElementById("classe").value}
+Raça: ${document.getElementById("raca").value}
+Antecedente: ${document.getElementById("antecedente").value}
+Nível: ${document.getElementById("nivel").value}
+Iniciativa: ${document.getElementById("iniciativa").value}
+
+Atributos:
+`;
+    for (let nome of nomesAtributos) {
+      texto += `${nome}: ${atributos[nome]} (Bônus: ${calculaBonus(atributos[nome])})\n`;
+    }
+    texto += `
+
+Lore / Características Gerais:
+${document.getElementById("lore").value}
+
+Inventário:
+${document.getElementById("inventario").value}
+
+Magias:
+${document.getElementById("magias").value}
+`;
+
+    const blob = new Blob([texto], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ficha_rpg.txt";
+    a.click();
+  }
+
+  document.getElementById("nivel").addEventListener("input", () => {
+    atualizarPontos();
+    salvarFicha();
   });
-  window.onload = atualizaFicha;
+  document.getElementById("nome").addEventListener("input", salvarFicha);
+  document.getElementById("classe").addEventListener("input", salvarFicha);
+  document.getElementById("raca").addEventListener("input", salvarFicha);
+  document.getElementById("antecedente").addEventListener("input", salvarFicha);
+  document.getElementById("lore").addEventListener("input", salvarFicha);
+  document.getElementById("inventario").addEventListener("input", salvarFicha);
+  document.getElementById("magias").addEventListener("input", salvarFicha);
 
-  // Função para baixar ficha em TXT
-  function baixarFicha() {
-    let txt = '';
-    txt += `Nome: ${document.getElementById('nome').value}\n`;
-    txt += `Raça: ${document.getElementById('raca').value}\n\n`;
-    txt += `Atributos:\n`;
-    atributos.forEach(attr => {
-      let val = document.getElementById(attr.id).value;
-      let bonus = document.getElementById(attr.id+'Bonus').value;
-      txt += `  ${attr.nome} (${attr.abrev}): ${val} [Bônus: ${bonus}]\n`;
-    });
-    txt += `\nCA: ${document.getElementById('ca').textContent}\n`;
-    txt += `Vida: ${document.getElementById('vida').textContent}\n\n`;
-    txt += `Perícias:\n`;
-    pericias.forEach(p => {
-      let bonus = document.getElementById('bonus-'+p.nome.replace(/ /g,'')).value;
-      let atributo = atributos.find(a=>a.id===p.atributo).nome;
-      txt += `  ${p.nome}: ${bonus} (${atributo})\n`;
-    });
-    txt += `\nLore/Características Gerais:\n${document.getElementById('lore').value}\n`;
-    // Download
-    const blob = new Blob([txt], {type: 'text/plain'});
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'ficha-rpg.txt';
-    link.click();
-  }
+  document.getElementById("btnSalvar").addEventListener("click", salvarFicha);
+  document.getElementById("btnCarregar").addEventListener("click", carregarFicha);
+  document.getElementById("btnResetar").addEventListener("click", resetFicha);
+  document.getElementById("btnExportar").addEventListener("click", exportarTXT);
+
+  criarCamposAtributos();
+  atualizarPontos();
 </script>
+
 </body>
 </html>
